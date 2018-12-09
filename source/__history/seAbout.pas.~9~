@@ -1,0 +1,16 @@
+unit seAbout;
+
+interface
+
+uses Vcl.Dialogs;
+
+procedure se_About;
+
+implementation
+
+procedure se_About;
+begin
+  ShowMessage('Автор оригинального проекта: Дмитрий Зайцев(Dim-S' + #13#10 + 'Автор сборки: Никита Ганзиков (MagicFun)');
+end;
+
+end.

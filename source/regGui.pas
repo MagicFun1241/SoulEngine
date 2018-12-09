@@ -1,0 +1,340 @@
+unit regGui;
+
+{$I 'sDef.inc'}
+
+interface
+
+uses Forms, Dialogs, SysUtils, Windows, TypInfo, Classes, Controls, Buttons,
+  Messages, StdCtrls, CommCtrl, ComCtrls, Menus, ExtCtrls, ExtDlgs, Math, Mask, Grids,
+  Graphics, MImage, ValEdit, mainLCL, uGuiScreen, cooltrayicon,
+  pngimage, dsStdCtrl, Vcl.FileCtrl, Vcl.Samples.Spin, Vcl.ActnCtrls, Vcl.Tabs,
+  Vcl.Samples.Gauges, Vcl.ColorGrd, VCLTee.TeCanvas,
+  Vcl.Samples.Calendar
+
+{$IFDEF ADD_CHROMIUM}
+    , ceflib, cefvcl, cefgui
+{$ENDIF}
+{$IFDEF VS_EDITOR}
+    , NxPropertyItems, NxPropertyItemClasses, NxScrollControl,
+  NxInspector, DockTabSet,
+  SynEditHighlighter,
+  SynHighlighterPHP, SynHighlighterSQL, SynHighlighterHtml,
+  SynHighlighterPas, SynHighlighterXML, SynHighlighterCSS,
+  SynHighlighterJScript,
+  SynHighlighterCpp,
+  SynEdit, SynHighlighterGeneral,
+  SynCompletionProposal,
+  CategoryButtons
+{$ENDIF}
+{$IFDEF NOT_LITE}
+    , CheckLst
+{$ENDIF}
+{$IFDEF C_SIZECONTROL}
+    , SizeControl
+{$ENDIF}
+    ;
+
+function createComponent(aClass: ansistring; aOwner: integer): integer;
+function parentControl(id: integer; parent: integer): integer;
+function ownerComponent(id: integer): integer;
+function objectClass(id: integer): ansistring;
+function objectIs(id: integer; const aClass: ansistring): Boolean;
+function ComponentToStringProc(id: integer): string;
+function StringToComponentProc(Instance: integer; Value: string): TComponent;
+
+procedure registerGui();
+
+implementation
+
+uses uNonVisual;
+
+function objectClass(id: integer): ansistring;
+begin
+  if id <> 0 then
+    Result := toObject(id).ClassName
+  else
+    Result := #0;
+end;
+
+function objectIs(id: integer; const aClass: ansistring): Boolean;
+var
+  CL: TClass;
+begin
+  CL := GetClass(String(aClass));
+  Result := (CL <> NIL) and (id <> 0) and (toObject(id) is CL);
+end;
+
+function createComponent(aClass: ansistring; aOwner: integer): integer;
+Var
+  Owner: TComponent;
+  P: TComponentClass;
+begin
+  try
+    if aOwner = 0 then
+      Owner := nil
+    else
+      Owner := TComponent(toObject(aOwner));
+    P := TComponentClass(GetClass(String(aClass)));
+    if (P <> nil) then
+      Result := toID(TComponentClass(P).Create(Owner))
+    else
+      Result := 0;
+
+  except
+    Result := 0;
+  end;
+end;
+
+function parentControl(id: integer; parent: integer): integer;
+begin
+  Result := 0;
+  if toObject(id) is TControl then
+    if parent = -1 then
+      Result := toID(toControl(id).parent)
+    else
+      toControl(id).parent := toWControl(parent);
+end;
+
+function ownerComponent(id: integer): integer;
+begin
+  if toObject(id) is TComponent then
+    Result := toID(TComponent(id).Owner)
+  else
+    Result := 0;
+end;
+
+function ComponentToStringProc(id: integer): string;
+var
+  BinStream: TMemoryStream;
+  StrStream: TStringStream;
+  s: string;
+  Component: TComponent;
+begin
+  Component := TComponent(toObject(id));
+  BinStream := TMemoryStream.Create;
+  try
+    StrStream := TStringStream.Create(s);
+    try
+      BinStream.WriteComponent(Component);
+      BinStream.Seek(0, soFromBeginning);
+      ObjectBinaryToText(BinStream, StrStream);
+      StrStream.Seek(0, soFromBeginning);
+      Result := StrStream.DataString;
+    finally
+      StrStream.Free;
+    end;
+  finally
+    BinStream.Free
+  end;
+end;
+
+function StringToComponentProc(Instance: integer; Value: string): TComponent;
+var
+  StrStream: TStringStream;
+  BinStream: TMemoryStream;
+  Component: TComponent;
+begin
+  StrStream := TStringStream.Create(Value);
+  try
+    BinStream := TMemoryStream.Create;
+    try
+      ObjectTextToBinary(StrStream, BinStream);
+      BinStream.Seek(0, soFromBeginning);
+      Result := BinStream.ReadComponent(TComponent(toObject(Instance)));
+    finally
+      BinStream.Free;
+    end;
+  finally
+    StrStream.Free;
+  end;
+end;
+
+procedure registerArr(Classes: array of TPersistentClass);
+begin
+  RegisterClasses(Classes);
+end;
+
+procedure registerButtons;
+begin
+  registerArr([TSpeedButton
+{$IFDEF NOT_LITE}, TButton, TButtonControl {$ENDIF}
+    ]);
+
+  RegisterClass(Buttons.TBitBtn);
+  UnRegisterClass(Buttons.TBitBtn);
+  RegisterClassAlias(dsStdCtrl.TBitBtn, 'TBitBtn');
+end;
+
+procedure registerStandart;
+begin
+  registerButtons;
+
+  registerArr([TMainMenu, Menus.TMenuItem, Menus.TMenu, Menus.TPopupMenu,
+    TRadioButton, TLabel, TGroupBox, TPadding, TMargins, TBalloonHint,
+
+{$IFDEF NOT_LITE}
+    TScrollBar,
+{$ENDIF}
+    TPNGObject]);
+
+  RegisterClass(StdCtrls.TEdit);
+  UnRegisterClass(StdCtrls.TEdit);
+  RegisterClassAlias(dsStdCtrl.TEdit, 'TEdit');
+
+  RegisterClass(StdCtrls.TMemo);
+  UnRegisterClass(StdCtrls.TMemo);
+  RegisterClassAlias(dsStdCtrl.TMemo, 'TMemo');
+
+  RegisterClass(StdCtrls.TListBox);
+  UnRegisterClass(StdCtrls.TListBox);
+  RegisterClassAlias(dsStdCtrl.TListBox, 'TListBox');
+
+  RegisterClass(StdCtrls.TCheckBox);
+  UnRegisterClass(StdCtrls.TCheckBox);
+  RegisterClassAlias(dsStdCtrl.TCheckBox, 'TCheckBox');
+
+  RegisterClass(StdCtrls.TComboBox);
+  UnRegisterClass(StdCtrls.TComboBox);
+  RegisterClassAlias(dsStdCtrl.TComboBox, 'TComboBox');
+
+  RegisterClass(ExtCtrls.TPanel);
+end;
+
+procedure registerAdditional;
+begin
+  registerArr([TImage, TShape, TBevel, __TNoVisual
+
+{$IFDEF C_SIZECONTROL}
+    , TSizeCtrl
+{$ENDIF}
+{$IFDEF NOT_LITE}
+    , TColorBox, TLabeledEdit, TColorListBox,
+    TCheckListBox, TDateTimePicker, TStaticText, TSplitter, TValueListEditor,
+    TValueListStrings, TSplitter, TDrawGrid, TControlBar, TMaskEdit,
+    TStringGrid, TStringGridStrings, TMonthCalendar, TCoolTrayIcon,
+    TDropFilesTarget, TTabSet, TActionToolBar, TButtonColor,
+    TCalendar
+{$ENDIF}
+    ]);
+end;
+
+procedure registerWin32;
+begin
+  registerArr([TImageList, TTabControl, TPageControl,
+    // TSmartTabs,
+{$IFDEF NOT_LITE}
+    TTrackBar, TRichEdit, TTabSheet, TUpDown, THotKey, TAnimate,
+    TDateTimePicker, TMonthCalendar, TTreeView, TTreeNode, TTreeNodes,
+    THeaderControl, THeader, TToolBar, TCoolBar, TPageScroller, TComboBoxEx,
+    TListView, TListItems, TListItem, TListColumn, TListColumns, TButtonedEdit,
+{$ENDIF}
+    TProgressBar, TStatusBar]);
+end;
+
+procedure registerWin31;
+begin
+  registerArr([TFileListBox, TDirectoryListBox]);
+end;
+
+procedure registerSystem;
+begin
+  registerArr([TTimer, { TMediaPlayer, } {$IFDEF NOT_LITE}TPaintBox, {$ENDIF}
+    TSizeConstraints
+{$IFDEF NOT_LITE}, THintWindow{$ENDIF}{ , TOleContainer }
+    ]);
+end;
+
+procedure registerGraph;
+begin
+  registerArr([TFont, TMImage, Graphics.TGraphicsObject, Graphics.TPen,
+    Graphics.TBrush, Graphics.TPicture, Graphics.TMetafileCanvas,
+    Graphics.TBitmap, Graphics.TMetafile, Graphics.TIcon]);
+end;
+
+procedure registerSamples;
+begin
+{$IFDEF NOT_LITE}
+  registerArr([
+  TColorGrid, TSpinButton, TSpinEdit, TGauge
+  ]);
+{$ENDIF}
+end;
+
+procedure registerForms;
+begin
+  registerArr([TForm, TCustomForm,
+{$IFDEF NOT_LITE}
+    TFrame, TCustomFrame,
+{$ENDIF}
+    TColorDialog, TCommonDialog,
+{$IFDEF NOT_LITE}
+    TDataModule,
+{$ENDIF}
+    TFontDialog,
+{$IFDEF NOT_LITE}
+    Forms.TControlScrollBar, Forms.TScrollingWinControl, Forms.TScrollBox,
+{$ENDIF}
+    Forms.TCustomActiveForm, Forms.TScreen, TScreenEx, TOpenDialog, TSaveDialog
+
+{$IFDEF NOT_LITE}
+    , Dialogs.TPrinterSetupDialog, Dialogs.TPrintDialog, ExtDlgs.TOpenPictureDialog,
+    Dialogs.TPageSetupDialog, Dialogs.TFindDialog, Dialogs.TReplaceDialog, ExtDlgs.TSavePictureDialog,
+    ExtDlgs.TOpenTextFileDialog, ExtDlgs.TSaveTextFileDialog
+{$ENDIF}
+    ]);
+end;
+
+procedure registerVSEditor;
+begin
+{$IFDEF VS_EDITOR}
+  registerArr([
+    TNxCustomInspector, TNxScrollBar, TNxControl, TNxTextItem, TNxTimeItem,
+    TNxPopupItem, TNxToolbarItemButton, TNxToolbarItem, TNxCheckBoxItem,
+    TNxButtonItem, TNxMemoItem, TNxAlignmentItem, TNxVertAlignmentItem,
+    TNxColorItem, TNxCustomNumberItem, TNxSpinItem, TNxTrackBarItem,
+    TNxRadioItem, TNxPropertyItem, TNxPropertyItems, TNxProgressItem,
+    TNextInspector, TNxComboBoxItem, TSynEdit,
+    TSynPHPSyn, TSynGeneralSyn, TSynCppSyn, TSynCssSyn, TSynHTMLSyn, TSynSQLSyn,
+    TSynJScriptSyn, TSynXMLSyn,
+    TSynCompletionProposal, TSynHighlighterAttributes,
+    TButtonCategory, TButtonCategories, TButtonItem, TCategoryButtons
+    ]);
+{$ENDIF}
+end;
+
+procedure registerTabs;
+begin
+    registerArr([TTabSet
+    ]);
+end;
+
+var
+  Registered: Boolean = false;
+
+procedure registerGui();
+begin
+  if Registered then
+    exit;
+
+  registerForms;
+  registerStandart;
+  registerAdditional;
+  registerWin32;
+  registerWin31;
+  registerSystem;
+  registerSamples;
+  registerGraph;
+  registerTabs;
+
+{$IFDEF ADD_CHROMIUM}
+  registerArr([TChromium, TChromiumOptions]);
+{$ENDIF}
+  registerVSEditor;
+  Registered := true;
+end;
+
+initialization
+
+registerGui;
+
+end.

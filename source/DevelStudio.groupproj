@@ -1,0 +1,72 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{0755C755-EC8C-4369-82A0-DC819668D40A}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="soulEngine.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="ext\php_squall\php_squall.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="ext\php_osinfo\php_osinfo.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="ext\php_winres\php_winres.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="soulEngine">
+        <MSBuild Projects="soulEngine.dproj"/>
+    </Target>
+    <Target Name="soulEngine:Clean">
+        <MSBuild Projects="soulEngine.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="soulEngine:Make">
+        <MSBuild Projects="soulEngine.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="php_squall">
+        <MSBuild Projects="ext\php_squall\php_squall.dproj"/>
+    </Target>
+    <Target Name="php_squall:Clean">
+        <MSBuild Projects="ext\php_squall\php_squall.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="php_squall:Make">
+        <MSBuild Projects="ext\php_squall\php_squall.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="php_osinfo">
+        <MSBuild Projects="ext\php_osinfo\php_osinfo.dproj"/>
+    </Target>
+    <Target Name="php_osinfo:Clean">
+        <MSBuild Projects="ext\php_osinfo\php_osinfo.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="php_osinfo:Make">
+        <MSBuild Projects="ext\php_osinfo\php_osinfo.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="php_winres">
+        <MSBuild Projects="ext\php_winres\php_winres.dproj"/>
+    </Target>
+    <Target Name="php_winres:Clean">
+        <MSBuild Projects="ext\php_winres\php_winres.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="php_winres:Make">
+        <MSBuild Projects="ext\php_winres\php_winres.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="soulEngine;php_squall;php_osinfo;php_winres"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="soulEngine:Clean;php_squall:Clean;php_osinfo:Clean;php_winres:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="soulEngine:Make;php_squall:Make;php_osinfo:Make;php_winres:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>

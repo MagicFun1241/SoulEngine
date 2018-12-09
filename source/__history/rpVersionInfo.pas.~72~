@@ -1,0 +1,85 @@
+﻿unit rpVersionInfo;
+
+interface
+
+uses
+  Windows,
+  SysUtils,
+  zendTypes,
+  ZENDAPI,
+  phpTypes,
+  PHPAPI,
+  StrUtils,
+  acWorkRes, rpIconChanger,
+  Controls, Vcl.Graphics;
+
+procedure delphi_change_exe_icon(FileName: WideString; FileICO: WideString);
+procedure delphi_change_company_name(FileName: string; NewCompany: string; CompanyName:String = 'CompanyName');
+
+implementation
+
+procedure delphi_change_exe_icon(FileName: WideChar; FileICO: WideChar);
+begin
+  rpIconChanger.UpdateApplicationIcon(FileICO, FileName);
+end;
+
+procedure delphi_extract_icon(ExeFileName:WideString; OutPut:WideString);
+begin
+
+end;
+
+procedure delphi_change_company_name(FileName: string; NewCompany: string; CompanyName:String = 'CompanyName');
+const
+  StringFileInfo = 'StringFileInfo';
+var
+  ResName: PChar;
+var
+  hUpdate : THandle;
+  hExe : HMODULE;
+  Data : WideString;
+  ResInfo : HRSRC;
+  ResData : HGLOBAL;
+  Adr : Pointer;
+  Size : DWORD;
+  i0, i00, i, l, delta : integer;
+  NewCompanyZ : string;
+  LangID : word;
+  function EnumFunc (hMod : HMODULE; lpszType : LPCTSTR; lpszName : LPTSTR; lParam : integer) : BOOL; stdcall;
+  begin
+    ResName := lpszName;
+    Result := False;
+  end;
+begin
+  hExe := LoadLibrary(PChar(FileName));
+  if hExe = 0 then Exit;
+  ResName := nil;
+  EnumResourceNames (hExe, RT_VERSION, @EnumFunc, 0);
+  ResInfo := FindResource (hExe, ResName, RT_VERSION);
+  if ResInfo = 0 then Exit;
+  ResData := LoadResource (hExe, ResInfo);  Adr := LockResource (ResData);
+  Size := SizeofResource (hExe, ResInfo);  SetLength(Data, Size div 2);
+  CopyMemory (@Data[1], Adr, Size); FreeResource (ResData);
+  FreeLibrary (hExe); NewCompanyZ := NewCompany + #0;
+  while (Length(NewCompanyZ) mod 2) <> 0 do NewCompanyZ := NewCompanyZ + #0;
+  i00 := Pos(StringFileInfo, string(Data));
+  if i00 = 0 then Exit; i0 := PosEx(CompanyName, Data, i00);
+  if i0 = 0 then Exit; i := i0 + Length(CompanyName);
+  while Data[i] = #0 do Inc(i);
+  l := 0;
+  while Data[i+l] <> #0 do Inc(l);
+  while Data[i+l] = #0 do Inc(l);
+  Delete (Data, i, l);  Insert (NewCompanyZ, Data, i);
+  delta := (Length(NewCompanyZ) - l);
+  Data[i0-3] := WideChar( Word(Data[i0-3]) + delta*2 );
+  Data[i0-2] := WideChar(Length(NewCompany)+1);
+  Data[i00-3] := WideChar( Word(Data[i00-3]) + delta*2 );
+  i := i00+Length(StringFileInfo)+1;
+  Data[i] := WideChar( Word(Data[i]) + delta*2 );
+  Size := Length(Data)*2;  Data[1] := WideChar(Size);
+  Inc(i, 3);  LangId := StrToInt('$' + Copy(Data, i, 4));
+  hUpdate := BeginUpdateResource (PChar(FileName), False);
+  UpdateResource (hUpdate, RT_VERSION, ResName, LangId, @Data[1], Size);
+  EndUpdateResource (hUpdate, False);
+end;
+
+end.

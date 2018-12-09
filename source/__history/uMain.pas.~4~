@@ -1,0 +1,194 @@
+unit uMain;
+
+{$I 'sDef.inc'}
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, StdCtrls, PHPCustomLibrary, phpLibrary, php4delphi, PHPCommon,
+  phpFunctions, ZENDTypes, zendAPI, uPhpEvents,
+  ExtCtrls, Menus, ComCtrls, Buttons, ToolWin, SizeControl, ExeMod,
+  AppEvnts, XPMan, phpAPI, Clipbrd,
+  core, NxPropertyItemClasses, NxPropertyItems, NxScrollControl, NxInspector;
+
+function TempDir: Ansistring;
+
+type
+  T__fMain = class(TForm)
+    b_Run: TButton;
+    Button1: TButton;
+    b_Restart: TButton;
+    MainMenu: TMainMenu;
+    File1: TMenuItem;
+    Script1: TMenuItem;
+    Open1: TMenuItem;
+    Save: TMenuItem;
+    Saveas1: TMenuItem;
+    N1: TMenuItem;
+    Exit1: TMenuItem;
+    Run1: TMenuItem;
+    N2: TMenuItem;
+    Examples1: TMenuItem;
+    N3: TMenuItem;
+    About1: TMenuItem;
+    Restart: TMenuItem;
+    OpenDialog: TOpenDialog;
+    MainMenu1: TMainMenu;
+    ApplicationEvents: TApplicationEvents;
+    Memo1: TMemo;
+    procedure b_RunClick(Sender: TObject);
+    procedure PHPLibraryFunctions1Execute(Sender: TObject;
+      Parameters: TFunctionParams; var ReturnValue: variant;
+      ZendVar: TZendVariable; TSRMLS_DC: Pointer);
+    procedure FormShow(Sender: TObject);
+    procedure b_RestartClick(Sender: TObject);
+    procedure SaveClick(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure Open1Click(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+    class procedure loadEngine(DLLFolder: string = '');
+    class procedure extractPHPEngine(EM: TExeStream);
+  end;
+
+var
+  __fMain: T__fMain;
+  appShow: boolean;
+
+implementation
+
+uses uPHPMod, uMainForm;
+
+{$R *.dfm}
+
+procedure T__fMain.b_RestartClick(Sender: TObject);
+begin
+  if not selfEnabled then
+  begin
+    phpMOD.psvPHP.ShutdownRequest;
+    phpMOD.PHPEngine.ShutdownEngine;
+    T__fMain.loadEngine();
+  end;
+end;
+
+procedure T__fMain.b_RunClick(Sender: TObject);
+begin
+  if not selfEnabled then
+  begin
+    phpMOD.psvPHP.UseDelimiters := False;
+    phpMOD.RunCode(Memo1.Lines.Text);
+    phpMOD.psvPHP.UseDelimiters := True;
+  end;
+end;
+
+procedure T__fMain.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+  // SaveClick(nil)
+end;
+
+procedure T__fMain.FormCreate(Sender: TObject);
+begin
+
+  // dd.im
+end;
+
+procedure T__fMain.FormShow(Sender: TObject);
+begin
+  if not selfEnabled and FileExists('code.php') then
+    Memo1.Lines.LoadFromFile('code.php');
+end;
+
+class procedure T__fMain.loadEngine(DLLFolder: string = '');
+
+  function FindFileSize(Filename: string): integer;
+  var
+    sr: TSearchRec;
+  begin
+    if FindFirst(Filename, faAnyFile - faDirectory, sr) = 0 then
+      Result := sr.Size
+    else
+      Result := -1;
+    FindClose(sr);
+  end;
+
+begin
+
+  // PHPEngine.AddFunction('my_call', @ex_dec);
+  //InitializeEventSystem( PHPEngine );
+
+  PHPEngine.HandleErrors := True;
+
+  // phpMOD.RunFile(engineDir+'include.php');
+  if (DLLFolder = '') then
+    DLLFolder := ExtractFilePath(ParamStr(0));
+
+  PHPEngine.DLLFolder := AnsiString(DLLFolder);
+
+  if FileExists(engineDir + '\php.ini') then
+    PHPEngine.IniPath := AnsiString(engineDir + '\php.ini')
+  else if FileExists(iniDir + '\php.ini') then
+    PHPEngine.IniPath := AnsiString(iniDir)
+  else if FileExists(progDir + '\php.ini') then
+    PHPEngine.IniPath := AnsiString(progDir)
+  else
+    PHPEngine.IniPath := PHPEngine.DLLFolder;
+
+  /// FS := TFileStream.Create(PHPEngine.IniPath, fmOpenRead, fmShareDenyWrite);
+
+  core_Init(PHPEngine, phpMOD.psvPHP);
+
+  addVar('progDir', progDir);
+  addVar('moduleDir', moduleDir);
+  addVar('engineDir', engineDir);
+
+  if (FileExists(engineDir + 'include.php')) and (not selfEnabled) then
+    phpMOD.RunFile(engineDir + 'include.php');
+end;
+
+function TempDir: Ansistring;
+var
+  WinDir: array [0 .. 1023] of char;
+begin
+  GetTempPath(1023, WinDir);
+  Result := AnsiString(StrPas(WinDir));
+end;
+
+class procedure T__fMain.extractPHPEngine(EM: TExeStream);
+
+begin
+
+end;
+
+procedure T__fMain.Open1Click(Sender: TObject);
+begin
+  if not OpenDialog.Execute then
+    exit;
+
+  Memo1.Lines.LoadFromFile(OpenDialog.Filename);
+end;
+
+procedure T__fMain.PHPLibraryFunctions1Execute(Sender: TObject;
+  Parameters: TFunctionParams; var ReturnValue: variant; ZendVar: TZendVariable;
+  TSRMLS_DC: Pointer);
+begin
+  with phpMOD.Variables.Add do
+  begin
+    Name := AnsiString(Parameters[0].Value);
+    Value := AnsiString(Parameters[1].Value);
+  end;
+end;
+
+procedure T__fMain.SaveClick(Sender: TObject);
+begin
+  Memo1.Lines.SaveToFile('code.php');
+end;
+
+
+  initialization
+  ReportMemoryLeaksOnShutdown := True;
+
+end.

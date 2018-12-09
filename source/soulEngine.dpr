@@ -1,0 +1,64 @@
+program soulEngine;
+
+{$I 'sDef.inc'}
+
+uses
+  Forms,
+  Dialogs,
+  SysUtils,
+  uMain in 'uMain.pas' {,
+  uMainForm in 'uMainForm.pas',
+  uPHPMod in 'uPHPMod.pas',
+  uGuiScreen in 'uGuiScreen.pas',
+  uApplication in 'uApplication.pas',
+  {$IFDEF VS_EDITOR},
+  uMainForm in 'uMainForm.pas',
+  uPHPMod in 'uPHPMod.pas',
+  uGuiScreen in 'uGuiScreen.pas',
+  uApplication in 'uApplication.pas',
+  {$IFDEF VS_EDITOR}
+  uPHPCatButtons in 'uPHPCatButtons.pas',
+  {$ENDIF }
+  regGui in 'regGui.pas',
+  uVSEditor in 'uVSEditor.pas' {phpVSEditor: TDataModule},
+  guiForms in 'guiForms.pas',
+  guiComponents in 'guiComponents.pas',
+  dsStdCtrl in 'dsStdCtrl.pas',
+  propertiesEngine in 'propertiesEngine.pas',
+  guiChromium in 'guiChromium.pas',
+  mainLCL in 'mainLCL.pas',
+  guiProperties in 'guiProperties.pas',
+  exeMod in 'exeMod.pas',
+  dwsHashtables in 'dwsHashtables.pas',
+  core in 'core.pas',
+  dsUtils in 'dsUtils.pas',
+  phpUtils in 'phpUtils.pas',
+  Utils in 'Utils.pas',
+  cefgui in 'core\controls\cef\cefgui.pas',
+  ceflib in 'core\controls\cef\ceflib.pas',
+  cefvcl in 'core\controls\cef\cefvcl.pas';
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.MainFormOnTaskBar := False;
+  Application.ShowMainForm := False;
+  Application.CreateForm(T__mainForm, __mainForm);
+  Application.CreateForm(T__fMain, __fMain);
+  Application.CreateForm(TphpMOD, phpMOD);
+  Application.CreateForm(TphpVSEditor, phpVSEditor);
+  {$IFDEF VS_EDITOR}
+    Application.CreateForm(TphpVSEditor, phpVSEditor);
+  {$ENDIF}
+
+  {$IFDEF VS_EDITOR}
+  Application.CreateForm(TPHPCatButtons, PHPCatButtons);
+  {$ENDIF}
+
+   T__fMain.loadEngine(dllPHPPath);
+   __mainForm.FormActivate(__mainForm);
+
+  Application.Run;
+end.
+

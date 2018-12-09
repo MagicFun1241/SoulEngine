@@ -1,0 +1,28 @@
+unit cRtti;
+
+interface
+
+uses RTTI, Vcl.Dialogs, dsStdCtrl;
+
+function rtti_get_propList(AObject: TClass): Array of String;
+
+implementation
+
+function rtti_get_propList;
+var
+ c : TRttiContext;
+ m : TRttiProperty;
+ r : array[0] of String;
+ i: Integer = 0;
+begin
+  c := TRttiContext.Create;
+   for m in c.FindType(TBitBtn).GetProperties do
+   begin
+    i := i + 1;
+    r[i] := m.Name;
+   end;
+   Result := r;
+   c.Free;
+end;
+
+end.

@@ -1,0 +1,44 @@
+unit PhpIniFiles;
+
+interface
+
+uses IniFiles;
+
+type
+  TPHPIniFile = class(TObject)
+  private
+    Ini: TIniFile;
+    function GetCount: integer;
+  public
+    constructor Create(FileName: string);
+    destructor Destroy; override;
+    procedure UpdateFile;
+    procedure ReadString();
+    property Count: integer read GetCount;
+  end;
+
+implementation
+
+constructor TPHPIniFile.Create(FileName: string);
+begin
+  inherited;
+  Ini := TIniFile.Create(FileName);
+end;
+
+destructor TPHPIniFile.Destroy;
+begin
+  Ini.Free;
+  inherited;
+end;
+
+procedure TPHPIniFile.UpdateFile;
+begin
+  Ini.UpdateFile;
+end;
+
+procedure TPHPIniFile.ReadString(Section, Ident: string);
+begin
+  Ini.ReadString(Section, Ident);
+end;
+
+end.
